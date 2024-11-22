@@ -10,8 +10,41 @@
     {% block extra_head %}{% endblock %}
 </head>
 <body>
-    {% block content %}{% endblock %}
+    <div class="dashboard">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-leaf"></i>
+                <h2>Plant Monitor</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('main.dashboard') }}" class="{{ 'active' if request.endpoint == 'main.dashboard' }}">
+                    <i class="fas fa-home"></i>Dashboard
+                </a>
+                <a href="{{ url_for('main.plants') }}" class="{{ 'active' if request.endpoint == 'main.plants' }}">
+                    <i class="fas fa-seedling"></i>My Plants
+                </a>
+                <a href="{{ url_for('main.statistics') }}" class="{{ 'active' if request.endpoint == 'main.statistics' }}">
+                    <i class="fas fa-chart-line"></i>Statistics
+                </a>
+                  <a href="{{ url_for('main.chatbot') }}" class="{{ 'active' if request.endpoint == 'main.statistics' }}">
+                    <i class="fas fa-comment"></i>Chatbot
+                </a>
+
+                <a href="{{ url_for('main.settings') }}" class="{{ 'active' if request.endpoint == 'main.settings' }}">
+                    <i class="fas fa-cog"></i>Settings
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="{{ url_for('auth.logout') }}" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>Logout
+                </a>
+            </div>
+        </aside>
+        <main class="main-content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
     {% block scripts %}{% endblock %}
     <script type="module" src="{{ url_for('static', filename='js/firebase.js') }}"></script>
 </body>
-</html> 
+</html>

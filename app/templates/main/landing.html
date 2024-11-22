@@ -1,0 +1,20 @@
+<!-- templates/main/landing.html -->
+{% extends "base_landing.html" %}
+{% block title %}Welcome{% endblock %}
+
+{% block content %}
+<div class="landing-container">
+    <nav class="landing-nav">
+        <div class="logo">🥔 PotatoGuard</div>
+        <div class="nav-links">
+            <a href="{{ url_for('auth.login') }}" class="btn-login">Login</a>
+            <a href="{{ url_for('auth.register') }}" class="btn-primary">Get Started</a>
+        </div>
+    </nav>
+    <div class="hero-section">
+        <h1>Smart Potato Monitoring</h1>
+        <p>Track moisture, temperature, and growth of your potato crops in real-time</p>
+        <a href="{{ url_for('auth.register') }}" class="cta-button">Start Monitoring Today</a>
+    </div>
+</div>
+{% endblock %}

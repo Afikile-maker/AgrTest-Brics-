@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="settings-page">
+    <h1>Settings</h1>
+    <form class="settings-form">
+        <div class="form-group">
+            <label>Notification Preferences</label>
+            <input type="checkbox" id="emailNotifs"> Email Notifications
+        </div>
+        <div class="form-group">
+            <label>Temperature Unit</label>
+            <select id="tempUnit">
+                <option value="C">Celsius</option>
+                <option value="F">Fahrenheit</option>
+            </select>
+        </div>
+        <button type="submit" class="btn-primary">Save Changes</button>
+    </form>
+</div>
+{% endblock %}

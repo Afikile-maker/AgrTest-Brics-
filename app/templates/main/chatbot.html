@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="chatbot-page">
+    <h1>Potato Expert Bot</h1>
+    <div class="chat-container">
+        <div class="chat-messages" id="chatMessages"></div>
+        <div class="chat-input">
+            <input type="text" id="userInput" placeholder="Ask about potato growing...">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+</div>
+{% endblock %}

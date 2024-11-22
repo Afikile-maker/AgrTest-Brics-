@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="plants-page">
+    <h1>My Potato Plants</h1>
+    <div class="plants-grid">
+        {% for plant in plants %}
+        <div class="plant-card">
+            <h3>{{ plant.name }}</h3>
+            <div class="plant-stats">
+                <p>Moisture: {{ plant.moisture_level }}%</p>
+                <p>Temperature: {{ plant.temperature }}°C</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
