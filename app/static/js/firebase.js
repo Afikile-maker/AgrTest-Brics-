@@ -1,22 +1,31 @@
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+const db = firebase.firestore();
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyBYAuhIUbAK7ACty7PdWvHOBbAe4TPDf7g",
-  authDomain: "agritest-10701.firebaseapp.com",
-  databaseURL: "https://agritest-10701-default-rtdb.firebaseio.com",
-  projectId: "agritest-10701",
-  storageBucket: "agritest-10701.firebasestorage.app",
-  messagingSenderId: "1055187803843",
-  appId: "1:1055187803843:web:2886440c136f8e4953cc76",
-  measurementId: "G-VWQFRLBGTC"
-};
+function updateSensorData(plantId) {
+    const sensorRef = db.collection('sensor_data').doc(plantId);
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+    sensorRef.onSnapshot((doc) => {
+        if (doc.exists) {
+            const data = doc.data();
+            document.querySelector(`#moisture-${plantId}`).textContent = `${data.moisture}%`;
+            document.querySelector(`#temperature-${plantId}`).textContent = `${data.temperature}°C`;
+            document.querySelector(`#humidity-${plantId}`).textContent = `${data.humidity}%`;
+            document.querySelector(`#light-${plantId}`).textContent = `${data.light} lux`;
+
+            // Add updating animation
+            const values = document.querySelectorAll('.sensor-value');
+            values.forEach(value => {
+                value.classList.add('updating');
+                setTimeout(() => value.classList.remove('updating'), 1000);
+            });
+        }
+    });
+}
+
+// Initialize real-time updates for each plant
+document.addEventListener('DOMContentLoaded', () => {
+    const plants = document.querySelectorAll('.plant-card');
+    plants.forEach(plant => {
+        const plantId = plant.dataset.plantId;
+        updateSensorData(plantId);
+    });
+});

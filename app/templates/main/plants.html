@@ -1,17 +1,85 @@
+<!-- templates/main/plants.html -->
 {% extends "base.html" %}
+
 {% block content %}
 <div class="plants-page">
-    <h1>My Potato Plants</h1>
+    <header class="plants-header">
+        <div class="header-content">
+            <h1>Potato Field Monitor</h1>
+            <p>Real-time sensor data from your fields</p>
+        </div>
+        <button class="btn-primary" onclick="showAddPlantModal()">
+            <i class="fas fa-plus"></i> Add New Field
+        </button>
+    </header>
+
     <div class="plants-grid">
         {% for plant in plants %}
         <div class="plant-card">
-            <h3>{{ plant.name }}</h3>
-            <div class="plant-stats">
-                <p>Moisture: {{ plant.moisture_level }}%</p>
-                <p>Temperature: {{ plant.temperature }}°C</p>
+            <div class="plant-header">
+                <h3>{{ plant.name }}</h3>
+                <span class="plant-type">{{ plant.type }}</span>
+            </div>
+            
+            <div class="sensor-grid">
+                <div class="sensor-item">
+                    <i class="fas fa-tint"></i>
+                    <div class="sensor-data">
+                        <span class="label">Moisture</span>
+                        <span class="value">{{ plant.moisture }}%</span>
+                    </div>
+                </div>
+                
+                <div class="sensor-item">
+                    <i class="fas fa-thermometer-half"></i>
+                    <div class="sensor-data">
+                        <span class="label">Temperature</span>
+                        <span class="value">{{ plant.temperature }}°C</span>
+                    </div>
+                </div>
+                
+                <div class="sensor-item">
+                    <i class="fas fa-cloud"></i>
+                    <div class="sensor-data">
+                        <span class="label">Humidity</span>
+                        <span class="value">{{ plant.humidity }}%</span>
+                    </div>
+                </div>
+                
+                <div class="sensor-item">
+                    <i class="fas fa-sun"></i>
+                    <div class="sensor-data">
+                        <span class="label">Light</span>
+                        <span class="value">{{ plant.light }} lux</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="plant-status">
+                <div class="health-indicator {{ plant.health_status|lower }}">
+                    <i class="fas fa-heartbeat"></i>
+                    {{ plant.health_status }}
+                </div>
+                <span class="last-updated">
+                    Last updated: {{ plant.last_updated }}
+                </span>
+            </div>
+            
+            <div class="plant-actions">
+                <button class="btn-secondary" onclick="viewDetails('{{ plant.id }}')">
+                    <i class="fas fa-chart-line"></i> View Details
+                </button>
+                <button class="btn-warning" onclick="configureAlerts('{{ plant.id }}')">
+                    <i class="fas fa-bell"></i> Set Alerts
+                </button>
             </div>
         </div>
         {% endfor %}
     </div>
+</div>
+
+<!-- Add Plant Modal -->
+<div id="addPlantModal" class="modal">
+    <!-- Modal content here -->
 </div>
 {% endblock %}

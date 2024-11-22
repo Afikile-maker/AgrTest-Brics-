@@ -1,10 +1,117 @@
+<!-- templates/main/statistics.html -->
 {% extends "base.html" %}
+
 {% block content %}
 <div class="statistics-page">
-    <h1>Growth Statistics</h1>
-    <div class="charts">
-        <canvas id="moistureChart"></canvas>
-        <canvas id="temperatureChart"></canvas>
+    <header class="stats-header">
+        <h1>Growth Analytics</h1>
+        <div class="time-filter">
+            <button class="btn-filter active" data-period="week">Week</button>
+            <button class="btn-filter" data-period="month">Month</button>
+            <button class="btn-filter" data-period="year">Year</button>
+        </div>
+    </header>
+
+    <div class="charts-grid">
+        <div class="chart-card">
+            <div class="chart-header">
+                <h3>Moisture Levels</h3>
+                <span class="chart-legend">Last 7 days</span>
+            </div>
+            <canvas id="moistureChart"></canvas>
+        </div>
+
+        <div class="chart-card">
+            <div class="chart-header">
+                <h3>Temperature Trends</h3>
+                <span class="chart-legend">Last 7 days</span>
+            </div>
+            <canvas id="temperatureChart"></canvas>
+        </div>
+
+        <div class="chart-card">
+            <div class="chart-header">
+                <h3>Growth Progress</h3>
+                <span class="chart-legend">Last 7 days</span>
+            </div>
+            <canvas id="growthChart"></canvas>
+        </div>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get data from Flask
+    const moistureData = {{ moisture_data | tojson }};
+    const temperatureData = {{ temperature_data | tojson }};
+    const growthData = {{ growth_data | tojson }};
+    const labels = {{ date_labels | tojson }};
+
+    // Moisture Chart
+    new Chart(document.getElementById('moistureChart'), {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Moisture %',
+                data: moistureData,
+                borderColor: '#4CAF50',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            }
+        }
+    });
+
+    // Temperature Chart
+    new Chart(document.getElementById('temperatureChart'), {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Temperature °C',
+                data: temperatureData,
+                borderColor: '#F44336',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            }
+        }
+    });
+
+    // Growth Chart
+    new Chart(document.getElementById('growthChart'), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Growth Rate',
+                data: growthData,
+                backgroundColor: '#2196F3'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            }
+        }
+    });
+});
+</script>
 {% endblock %}
