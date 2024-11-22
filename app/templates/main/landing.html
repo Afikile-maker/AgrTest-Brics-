@@ -3,18 +3,35 @@
 {% block title %}Welcome{% endblock %}
 
 {% block content %}
-<div class="landing-container">
+<div class="landing-page">
     <nav class="landing-nav">
-        <div class="logo">🥔 PotatoGuard</div>
-        <div class="nav-links">
-            <a href="{{ url_for('auth.login') }}" class="btn-login">Login</a>
-            <a href="{{ url_for('auth.register') }}" class="btn-primary">Get Started</a>
+        <div class="logo animate-fade-in">🥔 PotatoGuard</div>
+        <div class="nav-links animate-fade-in">
+            <a href="{{ url_for('auth.login') }}" class="nav-btn">Login</a>
+            <a href="{{ url_for('auth.register') }}" class="nav-btn primary">Sign Up</a>
         </div>
     </nav>
+
     <div class="hero-section">
-        <h1>Smart Potato Monitoring</h1>
-        <p>Track moisture, temperature, and growth of your potato crops in real-time</p>
-        <a href="{{ url_for('auth.register') }}" class="cta-button">Start Monitoring Today</a>
+        <div class="hero-content animate-slide-up">
+            <h1>Smart Potato Monitoring</h1>
+            <p>Advanced AI-powered monitoring for optimal potato crop yields</p>
+            <div class="feature-cards">
+                <div class="feature-card">
+                    <i class="fas fa-temperature-high"></i>
+                    <h3>Temperature</h3>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-tint"></i>
+                    <h3>Moisture</h3>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-chart-line"></i>
+                    <h3>Growth</h3>
+                </div>
+            </div>
+            <a href="{{ url_for('auth.register') }}" class="cta-button animate-pulse">Start Monitoring Today</a>
+        </div>
     </div>
 </div>
 {% endblock %}
