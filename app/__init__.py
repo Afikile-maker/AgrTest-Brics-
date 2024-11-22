@@ -16,5 +16,8 @@ def create_app(config_class=Config):
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
+    # app/__init__.py
+    from .camera import camera_bp
+    app.register_blueprint(camera_bp, url_prefix='/camera')
 
     return app

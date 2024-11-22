@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard{% endblock %}
+{% block title %}Potato Monitor Dashboard{% endblock %}
 
 {% block extra_head %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -9,52 +9,160 @@
 {% block content %}
 <header class="dashboard-header">
     <div class="header-title">
-        <h1>Welcome Back!</h1>
-        <p>{{ session['email'] }}</p>
+        <h1>Potato Field Monitor</h1>
+        <p class="ai-status">🤖 AI Model Status: Active | Last Update: {{ current_time }}</p>
     </div>
-    <button class="btn-primary" onclick="showAddPlantModal()">
-        <i class="fas fa-plus"></i>
-        Add New Plant
-    </button>
+    <div class="header-actions">
+        <button class="btn-secondary" onclick="toggleLiveStream()">
+            <i class="fas fa-video"></i>
+            Live Camera Feed
+        </button>
+        <button class="btn-primary" onclick="showAddPlantModal()">
+            <i class="fas fa-plus"></i>
+            Add Field Section
+        </button>
+    </div>
 </header>
 
 <div class="overview-cards">
     <div class="card">
-        <i class="fas fa-seedling"></i>
+        <i class="fas fa-robot"></i>
         <div class="card-info">
-            <h3>Total Plants</h3>
-            <p>{{ plants|length }}</p>
+            <h3>AI Predictions</h3>
+            <p>98% Healthy</p>
+            <span class="trend positive">↑ 2.3%</span>
         </div>
     </div>
     <div class="card">
-        <i class="fas fa-tint"></i>
+        <i class="fas fa-video"></i>
         <div class="card-info">
-            <h3>Need Water</h3>
-            <p>{{ plants|selectattr('moisture_level', '<', 30)|list|length }}</p>
+            <h3>Active Cameras</h3>
+            <p>4/4 Online</p>
+            <span class="status-dot green"></span>
         </div>
     </div>
     <div class="card">
         <i class="fas fa-thermometer-half"></i>
         <div class="card-info">
-            <h3>Avg Temperature</h3>
-            <p>24°C</p>
+            <h3>Field Conditions</h3>
+            <p>Optimal</p>
+            <div class="conditions">
+                <span>24°C</span> | <span>65% RH</span>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <i class="fas fa-calendar"></i>
+        <div class="card-info">
+            <h3>Harvest Prediction</h3>
+            <p>42 Days</p>
+            <span class="prediction-accuracy">95% Accurate</span>
+        </div>
+    </div>
+</div>
+<!-- Update dashboard.html camera section -->
+<div class="camera-grid">
+    <div class="camera-feed">
+        <div class="camera-header">
+            <span>Field Camera 1</span>
+            <span class="status online">LIVE</span>
+        </div>
+<img src="{{ url_for('camera.video_feed') }}" alt="Live Feed">
+        <div class="ai-overlay">
+            <span class="ai-status">🤖 AI Analysis Active</span>
+            <div class="ai-metrics">
+                <span>Growth: 85%</span>
+                <span>Health: 92%</span>
+            </div>
         </div>
     </div>
 </div>
 
-<div class="plants-grid">
-    {% for plant in plants %}
-    <div class="plant-card">
-        <!-- Plant card content remains the same -->
+
+    <div class="analytics-section">
+        <h2><i class="fas fa-chart-line"></i> Growth Analytics</h2>
+        <canvas id="growthChart"></canvas>
     </div>
-    {% endfor %}
+
+    <div class="alerts-section">
+        <h2><i class="fas fa-bell"></i> Recent Alerts</h2>
+        <div class="alert-list">
+            <div class="alert-item warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                <div class="alert-content">
+                    <h4>Moisture Level Low</h4>
+                    <p>Section B2 requires irrigation</p>
+                    <span class="alert-time">2 hours ago</span>
+                </div>
+            </div>
+            <!-- More alerts -->
+        </div>
+    </div>
 </div>
 
-<!-- Add Plant Modal remains the same -->
+<!-- Add Field Section Modal -->
+<div id="addFieldModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Add New Field Section</h2>
+            <span class="close">&times;</span>
+        </div>
+        <form>
+            <div class="form-group">
+                <label>Section Name</label>
+                <input type="text" placeholder="e.g., North Field B1">
+            </div>
+            <div class="form-group">
+                <label>Potato Variety</label>
+                <select>
+                    <option>Russet</option>
+                    <option>Yukon Gold</option>
+                    <option>Red Pontiac</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Planting Date</label>
+                <input type="date">
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn-primary">Add Section</button>
+            </div>
+        </form>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-// Modal scripts remain the same
+// Initialize growth chart
+const ctx = document.getElementById('growthChart').getContext('2d');
+const growthChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+        datasets: [{
+            label: 'Growth Rate',
+            data: [10, 25, 45, 70],
+            borderColor: '#4CAF50'
+        }]
+    }
+});
+
+// Toggle live stream
+function toggleLiveStream() {
+    // Implementation for live stream toggle
+}
+
+// Modal functionality
+function showAddFieldModal() {
+    document.getElementById('addFieldModal').style.display = 'block';
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    if (event.target == document.getElementById('addFieldModal')) {
+        document.getElementById('addFieldModal').style.display = 'none';
+    }
+}
 </script>
 {% endblock %}
