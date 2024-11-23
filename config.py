@@ -15,4 +15,5 @@ class Config:
     FIREBASE_CREDENTIALS_PATH = os.environ.get('FIREBASE_CREDENTIALS_PATH') or 'Service-Key.json'
     PERMANENT_SESSION_LIFETIME = timedelta(days=1)
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'your-secret-key'
+    OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
 

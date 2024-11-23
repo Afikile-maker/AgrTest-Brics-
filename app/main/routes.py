@@ -1,9 +1,12 @@
 from firebase_admin import firestore
-from flask import render_template, request, redirect, url_for, session
+from flask import render_template, request, redirect, url_for, session, jsonify
 from app.main import main_bp
 from app.models.plant import Plant
 from app.auth.utils import login_required
+from openai import OpenAI  # Updated import
 
+# Initialize OpenAI client
+client = OpenAI()
 
 @main_bp.route('/')
 def home():
@@ -93,3 +96,46 @@ def add_plant():
     plant = Plant(name=name, type=type, user_id=session['user'])
     plant.save()
     return redirect(url_for('main.dashboard'))
+
+
+@main_bp.route('/chatbot/send', methods=['POST'])
+@login_required
+def chatbot_send():
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No data received"}), 400
+            
+        user_message = data.get('message')
+        if not user_message:
+            return jsonify({"error": "No message provided"}), 400
+
+        print(f"Received message: {user_message}")  # Debug log
+        
+        # Initialize conversation with context about potato growing
+        messages = [
+            {
+                "role": "system", 
+                "content": "You are a potato growing expert. Provide helpful advice about growing potatoes, dealing with common issues, and maximizing yield."
+            },
+            {"role": "user", "content": user_message}
+        ]
+        
+        print("Sending request to OpenAI...")  # Debug log
+        
+        # Get response from OpenAI using GPT-4 (updated API call)
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=messages,
+            temperature=0.7,
+            max_tokens=500
+        )
+        
+        bot_response = response.choices[0].message.content
+        print(f"Received response: {bot_response}")  # Debug log
+        
+        return jsonify({"response": bot_response})
+        
+    except Exception as e:
+        print(f"Unexpected error: {str(e)}")
+        return jsonify({"error": "An unexpected error occurred"}), 500
