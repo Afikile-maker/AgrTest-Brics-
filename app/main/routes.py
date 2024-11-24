@@ -4,6 +4,8 @@ from app.main import main_bp
 from app.models.plant import Plant
 from app.auth.utils import login_required
 from openai import OpenAI  # Updated import
+from firebase_admin import db
+from datetime import datetime, timedelta
 
 # Initialize OpenAI client
 client = OpenAI()
@@ -25,55 +27,118 @@ def dashboard():
 @main_bp.route('/plants')
 @login_required
 def plants():
-    db = firestore.client()
-    plants_ref = db.collection('plants').where('user_id', '==', session['user']).stream()
-    plants_data = []
+    # Get reference to sensor_data node
+    ref = db.reference('sensor_data')
+    sensor_readings = ref.get()
+    
+    # Process the latest readings
+    latest_readings = {
+        'soil_moisture': '0',
+        'temperature': '0',
+        'humidity': '0',
+        'ultrasonic': '0'
+    }
+    
+    if sensor_readings:
+        for reading_id, data in sensor_readings.items():
+            sensor_type = data.get('sensor', '')
+            value = data.get('value', '0')
+            
+            if 'Soil Moisture' in sensor_type:
+                latest_readings['soil_moisture'] = value
+            elif 'Temperature' in sensor_type:
+                latest_readings['temperature'] = value
+            elif 'Humidity' in sensor_type:
+                latest_readings['humidity'] = value
+            elif 'Ultrasonic Distance' in sensor_type:
+                latest_readings['ultrasonic'] = value
 
-    for plant in plants_ref:
-        data = plant.to_dict()
-        # Get real-time sensor data
-        sensor_ref = db.collection('sensor_data').document(plant.id).get()
-        sensor_data = sensor_ref.to_dict() if sensor_ref.exists else {}
+    # Mock plant data structure with real sensor values
+    plants = [
+        {
+            'id': '1',
+            'name': 'Field Section A',
+            'type': 'Potato',
+            'moisture': latest_readings['soil_moisture'],
+            'temperature': latest_readings['temperature'],
+            'humidity': latest_readings['humidity'],
+            'light': latest_readings['ultrasonic'],
+            'health_status': get_health_status(latest_readings),
+            'last_updated': 'Just now'
+        }
+        # Add more fields as needed
+    ]
+    
+    return render_template('main/plants.html', plants=plants)
 
-        plants_data.append({
-            'id': plant.id,
-            'name': data.get('name'),
-            'type': data.get('type'),
-            'moisture': sensor_data.get('moisture', 0),
-            'temperature': sensor_data.get('temperature', 0),
-            'humidity': sensor_data.get('humidity', 0),
-            'light': sensor_data.get('light', 0),
-            'health_status': sensor_data.get('health_status', 'Unknown'),
-            'last_updated': sensor_data.get('timestamp', 'No data')
-        })
-
-    return render_template('main/plants.html', plants=plants_data)
+def get_health_status(readings):
+    # Simple logic to determine plant health based on sensor readings
+    try:
+        moisture = float(readings['soil_moisture'])
+        temp = float(readings['temperature'])
+        humidity = float(readings['humidity'])
+        
+        if (20 <= moisture <= 60 and 
+            20 <= temp <= 30 and 
+            40 <= humidity <= 80):
+            return 'Healthy'
+        elif (10 <= moisture <= 70 and 
+              15 <= temp <= 35 and 
+              30 <= humidity <= 90):
+            return 'Warning'
+        else:
+            return 'Critical'
+    except:
+        return 'Unknown'
 
 
 @main_bp.route('/statistics')
 @login_required
 def statistics():
-    # Fetch data from Firebase
-    db = firestore.client()
-    sensor_ref = db.collection('sensor_data').where('user_id', '==', session['user']).stream()
-
+    # Get reference to sensor_data node
+    ref = db.reference('sensor_data')
+    sensor_readings = ref.get()
+    
+    # Initialize data arrays
     moisture_data = []
     temperature_data = []
-    growth_data = []
+    humidity_data = []
     date_labels = []
-
-    for doc in sensor_ref:
-        data = doc.to_dict()
-        moisture_data.append(data.get('moisture', 0))
-        temperature_data.append(data.get('temperature', 0))
-        growth_data.append(data.get('growth_rate', 0))
-        date_labels.append(data.get('timestamp').strftime('%Y-%m-%d'))
-
+    
+    if sensor_readings:
+        # Sort readings by timestamp
+        sorted_readings = sorted(
+            sensor_readings.items(),
+            key=lambda x: x[1].get('timestamp', ''),
+            reverse=True
+        )[:7]  # Get last 7 days of readings
+        
+        # Process each type of sensor reading
+        for _, reading in sorted_readings:
+            timestamp = reading.get('timestamp', '')
+            date_labels.append(timestamp.split('T')[0])  # Get just the date part
+            
+            sensor_type = reading.get('sensor', '')
+            value = float(reading.get('value', 0))
+            
+            if 'Soil Moisture' in sensor_type:
+                moisture_data.append(value)
+            elif 'Temperature' in sensor_type:
+                temperature_data.append(value)
+            elif 'Humidity' in sensor_type:
+                humidity_data.append(value)
+    
+    # Reverse the arrays so oldest data comes first
+    moisture_data.reverse()
+    temperature_data.reverse()
+    humidity_data.reverse()
+    date_labels.reverse()
+    
     return render_template('main/statistics.html',
-                           moisture_data=moisture_data,
-                           temperature_data=temperature_data,
-                           growth_data=growth_data,
-                           date_labels=date_labels)
+                         moisture_data=moisture_data,
+                         temperature_data=temperature_data,
+                         growth_data=humidity_data,  # Using humidity as growth indicator for now
+                         date_labels=date_labels)
 
 
 @main_bp.route('/settings')
