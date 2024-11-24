@@ -16,7 +16,7 @@
         <div class="chart-card">
             <div class="chart-header">
                 <h3>Moisture Levels</h3>
-                <span class="chart-legend">Last 7 days</span>
+                <span class="chart-legend">Real-time Updates</span>
             </div>
             <canvas id="moistureChart"></canvas>
         </div>
@@ -24,94 +24,245 @@
         <div class="chart-card">
             <div class="chart-header">
                 <h3>Temperature Trends</h3>
-                <span class="chart-legend">Last 7 days</span>
+                <span class="chart-legend">Real-time Updates</span>
             </div>
             <canvas id="temperatureChart"></canvas>
         </div>
 
         <div class="chart-card">
             <div class="chart-header">
-                <h3>Growth Progress</h3>
-                <span class="chart-legend">Last 7 days</span>
+                <h3>Humidity Levels</h3>
+                <span class="chart-legend">Real-time Updates</span>
             </div>
-            <canvas id="growthChart"></canvas>
+            <canvas id="humidityChart"></canvas>
         </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Get data from Flask
-    const moistureData = {{ moisture_data | tojson }};
-    const temperatureData = {{ temperature_data | tojson }};
-    const growthData = {{ growth_data | tojson }};
-    const labels = {{ date_labels | tojson }};
+// Create gradient background for charts
+const createGradient = (ctx, color) => {
+    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+    gradient.addColorStop(0, color + '40'); // 25% opacity
+    gradient.addColorStop(1, color + '00'); // 0% opacity
+    return gradient;
+};
 
-    // Moisture Chart
-    new Chart(document.getElementById('moistureChart'), {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Moisture %',
-                data: moistureData,
-                borderColor: '#4CAF50',
-                tension: 0.4
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'top',
+// Common chart options
+const commonOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+        legend: { display: false },
+        tooltip: {
+            mode: 'index',
+            intersect: false,
+            displayColors: false,
+            callbacks: {
+                title: function() { return ''; },
+                label: function(context) {
+                    return context.parsed.y.toFixed(2) + (context.dataset.label || '');
                 }
             }
+        }
+    },
+    scales: {
+        x: {
+            grid: {
+                display: false,
+                drawBorder: false
+            },
+            ticks: {
+                maxRotation: 0
+            }
+        },
+        y: {
+            grid: {
+                color: 'rgba(0, 0, 0, 0.05)',
+                drawBorder: false
+            },
+            ticks: {
+                padding: 10
+            },
+            beginAtZero: true
+        }
+    },
+    elements: {
+        line: {
+            tension: 0.4
+        },
+        point: {
+            radius: 0,
+            hoverRadius: 6
+        }
+    }
+};
+
+// Initialize the charts with initial data
+const moistureCtx = document.getElementById('moistureChart').getContext('2d');
+const moistureChart = new Chart(moistureCtx, {
+    type: 'line',
+    data: {
+        labels: JSON.parse('{{ date_labels | tojson | safe }}'),
+        datasets: [{
+            label: '%',
+            data: JSON.parse('{{ moisture_data | tojson | safe }}'),
+            borderColor: '#4CAF50',
+            borderWidth: 2,
+            backgroundColor: createGradient(moistureCtx, '#4CAF50'),
+            fill: true
+        }]
+    },
+    options: commonOptions
+});
+
+const temperatureCtx = document.getElementById('temperatureChart').getContext('2d');
+const temperatureChart = new Chart(temperatureCtx, {
+    type: 'line',
+    data: {
+        labels: JSON.parse('{{ date_labels | tojson | safe }}'),
+        datasets: [{
+            label: '°C',
+            data: JSON.parse('{{ temperature_data | tojson | safe }}'),
+            borderColor: '#F44336',
+            borderWidth: 2,
+            backgroundColor: createGradient(temperatureCtx, '#F44336'),
+            fill: true
+        }]
+    },
+    options: commonOptions
+});
+
+const humidityCtx = document.getElementById('humidityChart').getContext('2d');
+const humidityChart = new Chart(humidityCtx, {
+    type: 'line',
+    data: {
+        labels: JSON.parse('{{ date_labels | tojson | safe }}'),
+        datasets: [{
+            label: '%',
+            data: JSON.parse('{{ growth_data | tojson | safe }}'),
+            borderColor: '#2196F3',
+            borderWidth: 2,
+            backgroundColor: createGradient(humidityCtx, '#2196F3'),
+            fill: true
+        }]
+    },
+    options: commonOptions
+});
+
+// Initialize Firebase and set up real-time updates
+const firebaseConfig = {
+    databaseURL: "https://agritest-10701-default-rtdb.firebaseio.com"
+};
+
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+const sensorRef = database.ref('sensor_data');
+
+sensorRef.on('value', (snapshot) => {
+    const data = snapshot.val();
+    if (!data) return;
+
+    const readings = Object.values(data);
+    const latestReadings = readings.slice(-7); // Get last 7 readings
+
+    const newData = {
+        moisture: [],
+        temperature: [],
+        humidity: [],
+        labels: []
+    };
+
+    latestReadings.forEach(reading => {
+        const date = reading.timestamp.split('T')[0];
+        newData.labels.push(date);
+
+        if (reading.sensor === 'Soil Moisture') {
+            newData.moisture.push(parseFloat(reading.value));
+        } else if (reading.sensor === 'Temperature') {
+            newData.temperature.push(parseFloat(reading.value));
+        } else if (reading.sensor === 'Humidity') {
+            newData.humidity.push(parseFloat(reading.value));
         }
     });
 
-    // Temperature Chart
-    new Chart(document.getElementById('temperatureChart'), {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Temperature °C',
-                data: temperatureData,
-                borderColor: '#F44336',
-                tension: 0.4
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'top',
-                }
-            }
-        }
-    });
+    // Update charts with new data
+    updateChart(moistureChart, newData.labels, newData.moisture);
+    updateChart(temperatureChart, newData.labels, newData.temperature);
+    updateChart(humidityChart, newData.labels, newData.humidity);
+});
 
-    // Growth Chart
-    new Chart(document.getElementById('growthChart'), {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Growth Rate',
-                data: growthData,
-                backgroundColor: '#2196F3'
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'top',
-                }
-            }
-        }
+function updateChart(chart, labels, data) {
+    chart.data.labels = labels;
+    chart.data.datasets[0].data = data;
+    chart.update('none'); // Use 'none' for smoother updates
+}
+
+// Time filter functionality
+document.querySelectorAll('.btn-filter').forEach(button => {
+    button.addEventListener('click', function() {
+        document.querySelectorAll('.btn-filter').forEach(btn => btn.classList.remove('active'));
+        this.classList.add('active');
+        
+        const period = this.dataset.period;
+        // TODO: Add time filtering logic here based on selected period
     });
 });
 </script>
+
+<style>
+.statistics-page {
+    padding: 20px;
+}
+
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    padding: 1rem;
+}
+
+.chart-card {
+    background: white;
+    border-radius: 10px;
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    height: 300px;
+}
+
+.chart-header {
+    margin-bottom: 1rem;
+}
+
+.chart-legend {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.btn-filter {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 20px;
+    margin: 0 0.5rem;
+    cursor: pointer;
+    background: #f0f0f0;
+}
+
+.btn-filter.active {
+    background: #2196F3;
+    color: white;
+}
+
+.stats-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    margin-bottom: 2rem;
+}
+</style>
 {% endblock %}

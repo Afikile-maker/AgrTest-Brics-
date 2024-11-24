@@ -10,9 +10,11 @@ def create_app(config_class=Config):
     # Initialize OpenAI
     client = OpenAI(api_key=app.config['OPENAI_API_KEY'])
 
-    # Initialize Firebase
+    # Initialize Firebase with database URL
     cred = credentials.Certificate(app.config['FIREBASE_CREDENTIALS_PATH'])
-    firebase_app = initialize_app(cred)
+    firebase_app = initialize_app(cred, {
+        'databaseURL': 'https://agritest-10701-default-rtdb.firebaseio.com'
+    })
 
     # Register blueprints
     from app.auth.routes import auth_bp

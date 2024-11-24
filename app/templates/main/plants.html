@@ -15,7 +15,7 @@
 
     <div class="plants-grid">
         {% for plant in plants %}
-        <div class="plant-card">
+        <div class="plant-card" id="plant-{{ plant.id }}">
             <div class="plant-header">
                 <h3>{{ plant.name }}</h3>
                 <span class="plant-type">{{ plant.type }}</span>
@@ -26,7 +26,7 @@
                     <i class="fas fa-tint"></i>
                     <div class="sensor-data">
                         <span class="label">Moisture</span>
-                        <span class="value">{{ plant.moisture }}%</span>
+                        <span class="value moisture-value">{{ plant.moisture }}%</span>
                     </div>
                 </div>
                 
@@ -34,7 +34,7 @@
                     <i class="fas fa-thermometer-half"></i>
                     <div class="sensor-data">
                         <span class="label">Temperature</span>
-                        <span class="value">{{ plant.temperature }}°C</span>
+                        <span class="value temperature-value">{{ plant.temperature }}°C</span>
                     </div>
                 </div>
                 
@@ -42,7 +42,7 @@
                     <i class="fas fa-cloud"></i>
                     <div class="sensor-data">
                         <span class="label">Humidity</span>
-                        <span class="value">{{ plant.humidity }}%</span>
+                        <span class="value humidity-value">{{ plant.humidity }}%</span>
                     </div>
                 </div>
                 
@@ -50,7 +50,7 @@
                     <i class="fas fa-sun"></i>
                     <div class="sensor-data">
                         <span class="label">Light</span>
-                        <span class="value">{{ plant.light }} lux</span>
+                        <span class="value light-value">{{ plant.light }} lux</span>
                     </div>
                 </div>
             </div>
@@ -58,10 +58,10 @@
             <div class="plant-status">
                 <div class="health-indicator {{ plant.health_status|lower }}">
                     <i class="fas fa-heartbeat"></i>
-                    {{ plant.health_status }}
+                    <span class="health-status-value">{{ plant.health_status }}</span>
                 </div>
                 <span class="last-updated">
-                    Last updated: {{ plant.last_updated }}
+                    Last updated: <span class="update-time">{{ plant.last_updated }}</span>
                 </span>
             </div>
             
@@ -77,6 +77,102 @@
         {% endfor %}
     </div>
 </div>
+
+<!-- Add this before the closing body tag -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+<script>
+    // Initialize Firebase (add your config)
+    const firebaseConfig = {
+        // Add your Firebase config here
+        databaseURL: "https://agritest-10701-default-rtdb.firebaseio.com"
+    };
+    
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+    
+    // Listen for real-time updates
+    const sensorRef = database.ref('sensor_data');
+    sensorRef.on('value', (snapshot) => {
+        const data = snapshot.val();
+        updateSensorDisplays(data);
+    });
+
+    function updateSensorDisplays(data) {
+        let moisture = '0', temperature = '0', humidity = '0', light = '0';
+        
+        // Process the data
+        Object.values(data).forEach(reading => {
+            if (reading.sensor === 'Soil Moisture') moisture = reading.value;
+            if (reading.sensor === 'Temperature') temperature = reading.value;
+            if (reading.sensor === 'Humidity') humidity = reading.value;
+            if (reading.sensor === 'Ultrasonic Distance') light = reading.value;
+        });
+
+        // Update the display
+        document.querySelectorAll('.moisture-value').forEach(el => el.textContent = `${moisture}%`);
+        document.querySelectorAll('.temperature-value').forEach(el => el.textContent = `${temperature}°C`);
+        document.querySelectorAll('.humidity-value').forEach(el => el.textContent = `${humidity}%`);
+        document.querySelectorAll('.light-value').forEach(el => el.textContent = `${light} lux`);
+        
+        // Update last updated time
+        document.querySelectorAll('.update-time').forEach(el => el.textContent = 'Just now');
+        
+        // Update health status
+        updateHealthStatus(moisture, temperature, humidity);
+    }
+
+    function updateHealthStatus(moisture, temperature, humidity) {
+        let status;
+        if (20 <= moisture && moisture <= 60 &&
+            20 <= temperature && temperature <= 30 &&
+            40 <= humidity && humidity <= 80) {
+            status = 'Healthy';
+        } else if (10 <= moisture && moisture <= 70 &&
+                   15 <= temperature && temperature <= 35 &&
+                   30 <= humidity && humidity <= 90) {
+            status = 'Warning';
+        } else {
+            status = 'Critical';
+        }
+
+        document.querySelectorAll('.health-status-value').forEach(el => {
+            el.textContent = status;
+            el.closest('.health-indicator').className = `health-indicator ${status.toLowerCase()}`;
+        });
+    }
+</script>
+
+<style>
+    .health-indicator.healthy { background-color: #4CAF50; }
+    .health-indicator.warning { background-color: #FFC107; }
+    .health-indicator.critical { background-color: #F44336; }
+    
+    .sensor-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        margin: 1rem 0;
+    }
+    
+    .sensor-item {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem;
+        background: #f5f5f5;
+        border-radius: 8px;
+    }
+    
+    .sensor-data {
+        margin-left: 0.5rem;
+    }
+    
+    .value {
+        font-weight: bold;
+        color: #2196F3;
+    }
+</style>
 
 <!-- Add Plant Modal -->
 <div id="addPlantModal" class="modal">
