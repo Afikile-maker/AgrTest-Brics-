@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="alert-settings-page">
+    <header class="page-header">
+        <h1>Alert Settings</h1>
+        <p class="subtitle">Configure your notification thresholds</p>
+    </header>
+
+    <form method="POST" class="settings-form">
+        <div class="settings-grid">
+            <div class="setting-card">
+                <div class="setting-header">
+                    <i class="fas fa-tint"></i>
+                    <h3>Moisture Thresholds</h3>
+                </div>
+                <div class="setting-controls">
+                    <div class="input-group">
+                        <label for="moisture_min">Minimum (%)</label>
+                        <input type="number" id="moisture_min" name="moisture_min" min="0" max="100" 
+                               value="{{ current_settings.moisture_min|default(20) }}">
+                    </div>
+                    <div class="input-group">
+                        <label for="moisture_max">Maximum (%)</label>
+                        <input type="number" id="moisture_max" name="moisture_max" min="0" max="100"
+                               value="{{ current_settings.moisture_max|default(80) }}">
+                    </div>
+                </div>
+            </div>
+
+            <div class="setting-card">
+                <div class="setting-header">
+                    <i class="fas fa-thermometer-half"></i>
+                    <h3>Temperature Thresholds</h3>
+                </div>
+                <div class="setting-controls">
+                    <div class="input-group">
+                        <label for="temperature_min">Minimum (°C)</label>
+                        <input type="number" id="temperature_min" name="temperature_min" min="0" max="50"
+                               value="{{ current_settings.temperature_min|default(15) }}">
+                    </div>
+                    <div class="input-group">
+                        <label for="temperature_max">Maximum (°C)</label>
+                        <input type="number" id="temperature_max" name="temperature_max" min="0" max="50"
+                               value="{{ current_settings.temperature_max|default(35) }}">
+                    </div>
+                </div>
+            </div>
+
+            <div class="setting-card">
+                <div class="setting-header">
+                    <i class="fas fa-water"></i>
+                    <h3>Humidity Thresholds</h3>
+                </div>
+                <div class="setting-controls">
+                    <div class="input-group">
+                        <label for="humidity_min">Minimum (%)</label>
+                        <input type="number" id="humidity_min" name="humidity_min" min="0" max="100"
+                               value="{{ current_settings.humidity_min|default(30) }}">
+                    </div>
+                    <div class="input-group">
+                        <label for="humidity_max">Maximum (%)</label>
+                        <input type="number" id="humidity_max" name="humidity_max" min="0" max="100"
+                               value="{{ current_settings.humidity_max|default(90) }}">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="notification-preferences">
+            <h3>Notification Preferences</h3>
+            <div class="checkbox-group">
+                <label>
+                    <input type="checkbox" name="email_notifications" checked>
+                    Email Notifications
+                </label>
+                <label>
+                    <input type="checkbox" name="push_notifications" checked>
+                    Push Notifications
+                </label>
+                <label>
+                    <input type="checkbox" name="sms_notifications">
+                    SMS Notifications
+                </label>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn-save">Save Settings</button>
+            <button type="reset" class="btn-reset">Reset to Defaults</button>
+        </div>
+    </form>
+</div>
+
+<style>
+.alert-settings-page {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.page-header {
+    margin-bottom: 2rem;
+}
+
+.subtitle {
+    color: #6c757d;
+    margin-top: 0.5rem;
+}
+
+.settings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.setting-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.setting-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.setting-header i {
+    font-size: 1.5rem;
+    color: #2196F3;
+}
+
+.input-group {
+    margin-bottom: 1rem;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #495057;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 1rem;
+}
+
+.notification-preferences {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.checkbox-group {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.checkbox-group label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #495057;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+}
+
+.btn-save {
+    padding: 0.75rem 2rem;
+    background: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-save:hover {
+    background: #1976D2;
+}
+
+.btn-reset {
+    padding: 0.75rem 2rem;
+    background: white;
+    color: #dc3545;
+    border: 1px solid #dc3545;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-reset:hover {
+    background: #dc3545;
+    color: white;
+}
+</style>
+{% endblock %} 

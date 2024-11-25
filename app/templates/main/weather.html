@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="weather-page">
+    <header class="page-header">
+        <h1>Weather Forecast</h1>
+        <div class="location-selector">
+            <i class="fas fa-map-marker-alt"></i>
+            <select id="location" onchange="updateWeather()">
+                <option value="current">Current Location</option>
+                <option value="custom">Set Custom Location</option>
+            </select>
+        </div>
+    </header>
+
+    <div class="current-weather">
+        <div class="weather-card main">
+            {% if forecast.list and forecast.list|length > 0 %}
+            <div class="weather-icon">
+                <img src="https://openweathermap.org/img/wn/{{ forecast.list[0].weather[0].icon }}@2x.png" 
+                     alt="Weather icon">
+            </div>
+            <div class="weather-info">
+                <h2>{{ forecast.list[0].main.temp }}°C</h2>
+                <p class="weather-description">{{ forecast.list[0].weather[0].description }}</p>
+                <p class="location-name">{{ forecast.city.name }}</p>
+            </div>
+            <div class="weather-details">
+                <div class="detail">
+                    <i class="fas fa-wind"></i>
+                    <span>{{ forecast.list[0].wind.speed }} m/s</span>
+                </div>
+                <div class="detail">
+                    <i class="fas fa-tint"></i>
+                    <span>{{ forecast.list[0].main.humidity }}%</span>
+                </div>
+                <div class="detail">
+                    <i class="fas fa-temperature-high"></i>
+                    <span>Feels like {{ forecast.list[0].main.feels_like }}°C</span>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="forecast-section">
+        <h2>5-Day Forecast</h2>
+        <div class="forecast-grid">
+            {% for item in forecast.list[1:6] %}
+            <div class="forecast-card">
+                <div class="forecast-date">{{ item.dt_txt.split(' ')[0] }}</div>
+                <img src="https://openweathermap.org/img/wn/{{ item.weather[0].icon }}.png" 
+                     alt="Weather icon">
+                <div class="forecast-temps">
+                    <span class="temp-max">{{ item.main.temp_max }}°</span>
+                    <span class="temp-min">{{ item.main.temp_min }}°</span>
+                </div>
+                <div class="forecast-description">{{ item.weather[0].description }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% if forecast.alerts %}
+    <div class="weather-alerts">
+        <h2>Weather Alerts</h2>
+        <div class="alerts-grid">
+            {% for alert in forecast.alerts %}
+            <div class="alert-card">
+                <div class="alert-header">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h3>{{ alert.event }}</h3>
+                </div>
+                <p class="alert-description">{{ alert.description }}</p>
+                <div class="alert-time">
+                    <span>Start: {{ alert.start_txt }}</span>
+                    <span>End: {{ alert.end_txt }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.weather-page {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.location-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: white;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.location-selector select {
+    border: none;
+    font-size: 1rem;
+    color: #495057;
+    cursor: pointer;
+}
+
+.current-weather {
+    margin-bottom: 2rem;
+}
+
+.weather-card.main {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 2rem;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.weather-icon img {
+    width: 100px;
+    height: 100px;
+}
+
+.weather-info h2 {
+    font-size: 3rem;
+    margin: 0;
+}
+
+.weather-description {
+    color: #6c757d;
+    text-transform: capitalize;
+    margin: 0.5rem 0;
+}
+
+.location-name {
+    font-size: 1.2rem;
+    color: #2196F3;
+}
+
+.weather-details {
+    display: grid;
+    gap: 1rem;
+}
+
+.detail {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #495057;
+}
+
+.forecast-section {
+    margin-bottom: 2rem;
+}
+
+.forecast-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.forecast-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.forecast-date {
+    color: #6c757d;
+    margin-bottom: 1rem;
+}
+
+.forecast-temps {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin: 1rem 0;
+}
+
+.temp-max {
+    color: #dc3545;
+}
+
+.temp-min {
+    color: #2196F3;
+}
+
+.alerts-grid {
+    display: grid;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.alert-card {
+    background: #fff3cd;
+    border-radius: 12px;
+    padding: 1.5rem;
+}
+
+.alert-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    color: #856404;
+    margin-bottom: 1rem;
+}
+
+.alert-description {
+    color: #856404;
+    margin-bottom: 1rem;
+}
+
+.alert-time {
+    display: flex;
+    justify-content: space-between;
+    color: #856404;
+    font-size: 0.9rem;
+}
+</style>
+
+<script>
+function updateWeather() {
+    const location = document.getElementById('location').value;
+    if (location === 'current') {
+        navigator.geolocation.getCurrentPosition(position => {
+            const { latitude, longitude } = position.coords;
+            window.location.href = `/weather?lat=${latitude}&lon=${longitude}`;
+        }, error => {
+            console.error('Error getting location:', error);
+            alert('Unable to get your location. Please enable location services or enter location manually.');
+        });
+    } else {
+        // Show modal for custom location input
+        // Implementation needed
+    }
+}
+
+// Initialize weather updates
+document.addEventListener('DOMContentLoaded', () => {
+    if (document.getElementById('location').value === 'current') {
+        updateWeather();
+    }
+});
+</script>
+{% endblock %} 
