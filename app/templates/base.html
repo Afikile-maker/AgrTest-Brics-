@@ -37,8 +37,9 @@
                     <a href="{{ url_for('main.weather') }}" class="{{ 'active' if request.endpoint == 'main.weather' }}">
                         <i class="fas fa-cloud-sun"></i>Weather
                     </a>
-                    <a href="{{ url_for('main.get_predictions') }}" class="{{ 'active' if request.endpoint == 'main.get_predictions' }}">
-                        <i class="fas fa-chart-bar"></i>Predictions
+                    <a href="{{ url_for('main.predictions') }}" class="{{ 'active' if request.endpoint == 'main.predictions' }}">
+                        <i class="fas fa-microscope"></i>
+                        <span>Disease Detection</span>
                     </a>
                 </div>
 

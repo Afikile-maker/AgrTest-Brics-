@@ -1,0 +1,276 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="predictions-container">
+    <div class="detection-section">
+        <h2>Potato Disease Detection</h2>
+        <div class="upload-container">
+            <form id="diseaseDetectionForm">
+                <div class="upload-box" id="dropZone">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>Drag and drop an image or click to upload</p>
+                    <input type="file" id="imageInput" accept="image/*" hidden>
+                </div>
+                <img id="imagePreview" style="display: none; max-width: 100%; margin-top: 1rem;">
+                <button type="submit" class="submit-btn" disabled>Analyze Image</button>
+            </form>
+        </div>
+
+        <div id="results" class="results-container" style="display: none;">
+            <div class="result-card">
+                <h3>Detection Results</h3>
+                <div class="disease-status">
+                    <div class="status-indicator">
+                        <span id="statusBadge" class="badge"></span>
+                        <span id="confidenceScore"></span>
+                    </div>
+                </div>
+                <div class="disease-details">
+                    <h4>Analysis Details</h4>
+                    <ul id="detectionDetails"></ul>
+                </div>
+                <div class="yield-impact">
+                    <h4>Estimated Yield Impact</h4>
+                    <div id="yieldPrediction"></div>
+                </div>
+                <div class="action-insights">
+                    <h4>Recommended Actions</h4>
+                    <ul id="actionInsights"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.predictions-container {
+    padding: 2rem;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.detection-section {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.upload-container {
+    margin: 2rem 0;
+}
+
+.upload-box {
+    border: 2px dashed #ccc;
+    border-radius: 8px;
+    padding: 3rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.upload-box:hover {
+    border-color: #2196F3;
+}
+
+.upload-box i {
+    font-size: 3rem;
+    color: #666;
+    margin-bottom: 1rem;
+}
+
+.submit-btn {
+    background: #2196F3;
+    color: white;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 1rem;
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+.submit-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.results-container {
+    margin-top: 2rem;
+}
+
+.result-card {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1.5rem;
+}
+
+.badge {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: bold;
+}
+
+.badge.healthy {
+    background: #28a745;
+    color: white;
+}
+
+.badge.infected {
+    background: #dc3545;
+    color: white;
+}
+
+.disease-details, .yield-impact, .action-insights {
+    margin-top: 1.5rem;
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+}
+
+li {
+    margin-bottom: 0.5rem;
+    padding-left: 1.5rem;
+    position: relative;
+}
+
+li:before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: #2196F3;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dropZone = document.getElementById('dropZone');
+    const imageInput = document.getElementById('imageInput');
+    const form = document.getElementById('diseaseDetectionForm');
+    const submitBtn = form.querySelector('.submit-btn');
+    const imagePreview = document.getElementById('imagePreview');
+    
+    // Handle drag and drop
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = '#2196F3';
+    });
+    
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.style.borderColor = '#ccc';
+    });
+    
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = '#ccc';
+        handleFiles(e.dataTransfer.files);
+    });
+    
+    dropZone.addEventListener('click', () => {
+        imageInput.click();
+    });
+    
+    imageInput.addEventListener('change', (e) => {
+        handleFiles(e.target.files);
+    });
+    
+    function handleFiles(files) {
+        if (files.length > 0) {
+            const file = files[0];
+            if (file.type.startsWith('image/')) {
+                // Show image preview
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    imagePreview.src = e.target.result;
+                    imagePreview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+                submitBtn.disabled = false;
+            }
+        }
+    }
+    
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData();
+        formData.append('image', imageInput.files[0]);
+        
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Analyzing...';
+        
+        try {
+            const response = await fetch('https://impactful-prediction.cognitiveservices.azure.com/customvision/v3.0/Prediction/191033fa-414e-466e-b651-4f223770d7ea/classify/iterations/pddmodel/image', {
+                method: 'POST',
+                headers: {
+                    'Prediction-Key': '6HbItcSzzeO2j1gkFgCf38MW7E7hSElHAl2YTy3DpE60tkehvmMvJQQJ99AKACYeBjFXJ3w3AAAIACOGqYR1'
+                },
+                body: formData
+            });
+            
+            const result = await response.json();
+            displayResults(result);
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error analyzing image. Please try again.');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Analyze Image';
+        }
+    });
+    
+    function displayResults(result) {
+        const results = document.getElementById('results');
+        const statusBadge = document.getElementById('statusBadge');
+        const confidenceScore = document.getElementById('confidenceScore');
+        const detectionDetails = document.getElementById('detectionDetails');
+        const yieldPrediction = document.getElementById('yieldPrediction');
+        const actionInsights = document.getElementById('actionInsights');
+        
+        results.style.display = 'block';
+        
+        // Find the late blight prediction
+        const lateBlight = result.predictions.find(p => p.tagName === 'Infected with late blight');
+        const isInfected = lateBlight && lateBlight.probability > 0.5;
+        
+        // Update status badge
+        statusBadge.className = `badge ${isInfected ? 'infected' : 'healthy'}`;
+        statusBadge.textContent = isInfected ? 'INFECTED' : 'HEALTHY';
+        
+        // Show confidence score
+        const confidence = isInfected ? lateBlight.probability : 1 - lateBlight.probability;
+        confidenceScore.textContent = `${(confidence * 100).toFixed(1)}% confidence`;
+        
+        // Update detection details
+        detectionDetails.innerHTML = result.predictions
+            .map(pred => `<li>${pred.tagName}: ${(pred.probability * 100).toFixed(1)}%</li>`)
+            .join('');
+        
+        // Calculate yield impact
+        const yieldImpact = isInfected ? (1 - lateBlight.probability) * 100 : 100;
+        yieldPrediction.innerHTML = `
+            <p>Based on the current detection:</p>
+            <p class="yield-estimate">Expected yield: ${yieldImpact.toFixed(1)}%</p>
+        `;
+        
+        // Set action insights based on status
+        const actions = isInfected ? [
+            'Immediately apply appropriate fungicide treatment',
+            'Remove and destroy infected plants to prevent spread',
+            'Improve field ventilation to reduce humidity',
+            'Monitor other plants closely for signs of infection',
+            'Consider early harvest if infection is severe'
+        ] : [
+            'Continue regular monitoring',
+            'Maintain current preventive measures',
+            'Document successful practices',
+            'Keep up with regular fungicide schedule'
+        ];
+        
+        actionInsights.innerHTML = actions.map(action => `<li>${action}</li>`).join('');
+    }
+});
+</script>
+{% endblock %}

@@ -1,4 +1,4 @@
-#!c:\Users\IT STAFF\plantola\AgrTest-Brics-\.venv\Scripts\python.exe
+#!c:\Users\ngqas\OneDrive\Desktop\AgriTest\AgrTest-Brics-\.venv\Scripts\python.exe
 # -*- coding: utf-8 -*-
 # Copyright 2024 Google LLC
 #
