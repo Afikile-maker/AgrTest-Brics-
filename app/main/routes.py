@@ -1,29 +1,41 @@
-from firebase_admin import firestore
-from flask import render_template, request, redirect, url_for, session, jsonify, Response
-from app.main import main_bp
-from app.models.plant import Plant
-from app.auth.utils import login_required
-from openai import OpenAI
-from firebase_admin import db
+# Standard library imports
+import os
 from datetime import datetime, timedelta
+from io import StringIO
+import csv
+
+# Third-party imports
+import firebase_admin
+from firebase_admin import firestore, db
+from flask import render_template, request, redirect, url_for, session, jsonify, Response, Blueprint
+from openai import OpenAI
 import requests
 import cv2
 import numpy as np
 import pandas as pd
-import csv
-from io import StringIO
 from sklearn.linear_model import LinearRegression
-from datetime import datetime
-from flask import Blueprint
-import os
 from dotenv import load_dotenv
 import pytz
+from azure.cognitiveservices.vision.customvision.prediction import CustomVisionPredictionClient
+from msrest.authentication import ApiKeyCredentials
+from flask import jsonify, request
+import os
+
+# Local imports
+from app.main import main_bp
+from app.models.plant import Plant
+from app.auth.utils import login_required
+
 
 # Load environment variables
 load_dotenv()
 
-# Initialize OpenAI client
+# Initialize clients
 client = OpenAI()
+
+# Azure Custom Vision constants
+PREDICTION_KEY = os.getenv('AZURE_PREDICTION_KEY')
+ENDPOINT = os.getenv('AZURE_ENDPOINT')
 
 # Add this function before your routes
 def format_datetime(value):
@@ -316,10 +328,11 @@ def alert_settings():
         db.reference(f'users/{session["user"]}/alert_thresholds').set(thresholds)
     return render_template('main/alert_settings.html')
 
-@main_bp.route('/weather')
+
+@main_bp.route('/weather-forecast')  # Changed from '/weather' to '/weather-forecast'
 @login_required
 def weather():
-    API_KEY = os.getenv('OPENWEATHER_API_KEY')  # Get API key from environment variable
+    API_KEY = os.getenv('OPENWEATHER_API_KEY')
     
     if not API_KEY:
         return render_template('main/weather.html', 
@@ -342,6 +355,8 @@ def weather():
         return render_template('main/weather.html', 
                              forecast={'list': [], 'city': {'name': 'Unknown'}},
                              error="Unable to fetch weather data")
+    
+
 
 @main_bp.route('/detect-disease', methods=['POST'])
 @login_required
@@ -464,53 +479,7 @@ def get_current_conditions():
         current_conditions['humidity']
     ]
 
-@main_bp.route('/predictions')
-@login_required
-def get_predictions():
-    try:
-        # Fetch historical data
-        historical_data = get_historical_data()
-        
-        if not historical_data:
-            return render_template('main/predictions.html', 
-                                error="No historical data available")
-        
-        # Prepare data for model
-        df = pd.DataFrame(historical_data)
-        df_pivot = df.pivot(columns='sensor', values='value')
-        
-        # Ensure we have all required columns
-        required_columns = ['Soil Moisture', 'Temperature', 'Humidity']
-        for col in required_columns:
-            if col not in df_pivot.columns:
-                df_pivot[col] = 0
-        
-        # Create target variable (simple example using moisture as yield indicator)
-        df_pivot['yield'] = df_pivot['Soil Moisture'].rolling(window=3).mean()
-        
-        # Drop rows with NaN values
-        df_pivot = df_pivot.dropna()
-        
-        if len(df_pivot) < 2:
-            return render_template('main/predictions.html', 
-                                error="Insufficient data for prediction")
-        
-        # Create and train model
-        model = LinearRegression()
-        X = df_pivot[required_columns]
-        y = df_pivot['yield']
-        model.fit(X, y)
-        
-        # Make prediction for current conditions
-        current = get_current_conditions()
-        predicted_yield = model.predict([current])[0]
-        
-        return render_template('main/predictions.html', 
-                             predicted_yield=round(predicted_yield, 2))
-                             
-    except Exception as e:
-        return render_template('main/predictions.html', 
-                             error=f"Error making prediction: {str(e)}")
+
 
 @main_bp.route('/timelapse')
 @login_required
@@ -613,3 +582,80 @@ def export_data():
         mimetype='text/csv',
         headers={'Content-Disposition': 'attachment; filename=sensor_data.csv'}
     )
+
+@main_bp.route('/predictions', methods=['GET'])
+@login_required
+def predictions():
+    return render_template('main/predictions.html')
+
+@main_bp.route('/predict-disease', methods=['POST'])
+@login_required
+def predict_disease():
+    if 'image' not in request.files:
+        return jsonify({'error': 'No image uploaded'}), 400
+        
+    try:
+        image = request.files['image']
+        image_data = image.read()
+        
+        # Direct API call to Azure Custom Vision
+        url = "https://impactful-prediction.cognitiveservices.azure.com/customvision/v3.0/Prediction/191033fa-414e-466e-b651-4f223770d7ea/classify/iterations/pddmodel/image"
+        headers = {
+            'Prediction-Key': PREDICTION_KEY,
+            'Content-Type': 'application/octet-stream'
+        }
+        
+        response = requests.post(url, headers=headers, data=image_data)
+        response.raise_for_status()  # Raise an exception for bad status codes
+        results = response.json()
+        
+        # Process prediction results
+        predictions = []
+        for prediction in results['predictions']:
+            predictions.append({
+                'tagName': prediction['tagName'],
+                'probability': prediction['probability'] * 100
+            })
+            
+        # Find the late blight prediction
+        late_blight = next(
+            (pred for pred in predictions if pred['tagName'] == 'Infected with late blight'),
+            None
+        )
+        
+        # Determine status and yield impact
+        if late_blight and late_blight['probability'] > 50:
+            status = 'infected'
+            confidence = late_blight['probability']
+            yield_impact = 100 - (late_blight['probability'] * 0.8)
+            actions = [
+                'Immediately apply appropriate fungicide treatment',
+                'Remove and destroy infected plants to prevent spread',
+                'Improve field ventilation to reduce humidity',
+                'Monitor other plants closely for signs of infection',
+                'Consider early harvest if infection is severe'
+            ]
+        else:
+            status = 'healthy'
+            confidence = 100 - (late_blight['probability'] if late_blight else 0)
+            yield_impact = 95
+            actions = [
+                'Continue regular monitoring',
+                'Maintain current preventive measures',
+                'Document successful practices',
+                'Keep up with regular fungicide schedule'
+            ]
+        
+        response = {
+            'predictions': predictions,
+            'status': status,
+            'confidence': round(confidence, 1),
+            'yieldPrediction': round(yield_impact, 1),
+            'actions': actions
+        }
+        
+        return jsonify(response)
+        
+    except Exception as e:
+        print(f"Error in disease prediction: {str(e)}")
+        return jsonify({'error': str(e)}), 500

@@ -1,5 +1,10 @@
 {% extends "base.html" %}
 
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/weather.js') }}"></script>
+{% endblock %}
+
 {% block content %}
 <div class="weather-page">
     <header class="page-header">
@@ -233,29 +238,4 @@
     font-size: 0.9rem;
 }
 </style>
-
-<script>
-function updateWeather() {
-    const location = document.getElementById('location').value;
-    if (location === 'current') {
-        navigator.geolocation.getCurrentPosition(position => {
-            const { latitude, longitude } = position.coords;
-            window.location.href = `/weather?lat=${latitude}&lon=${longitude}`;
-        }, error => {
-            console.error('Error getting location:', error);
-            alert('Unable to get your location. Please enable location services or enter location manually.');
-        });
-    } else {
-        // Show modal for custom location input
-        // Implementation needed
-    }
-}
-
-// Initialize weather updates
-document.addEventListener('DOMContentLoaded', () => {
-    if (document.getElementById('location').value === 'current') {
-        updateWeather();
-    }
-});
-</script>
 {% endblock %} 
